@@ -1,0 +1,69 @@
+import tkinter as tk
+from tkinter import filedialog
+import ctypes
+import os
+import time
+
+def seleccionar_ruta():
+    ruta = filedialog.askdirectory()
+    if ruta:
+        ubicacion_var.set(ruta)
+
+# Crear la ventana principal
+ventana = tk.Tk()
+ventana.title("Seleccionar Ruta")
+ventana.geometry("400x220")
+
+# Variable para almacenar la ubicación
+ubicacion_var = tk.StringVar()
+
+# Etiqueta y entrada para la ubicación
+etiqueta_ubicacion = tk.Label(ventana, text="Ubicación:")
+etiqueta_ubicacion.pack()
+entrada_ubicacion = tk.Entry(ventana, textvariable=ubicacion_var)
+entrada_ubicacion.pack()
+
+# Botón para seleccionar la ruta
+boton_seleccionar = tk.Button(ventana, text="Seleccionar ruta", command=seleccionar_ruta)
+boton_seleccionar.pack()
+
+# Función para establecer el fondo de escritorio
+def set_wallpaper(image_path):
+    SPI_SETDESKWALLPAPER = 0x0014
+    SPIF_UPDATEINIFILE = 0x01
+    SPIF_SENDCHANGE = 0x02
+
+    user32 = ctypes.WinDLL('user32')
+    SystemParametersInfo = user32.SystemParametersInfoW
+
+    # Obtener la ruta completa del archivo
+    image_path = os.path.abspath(image_path)
+
+    # Establecer el fondo de escritorio
+    result = SystemParametersInfo(SPI_SETDESKWALLPAPER,
+                                  0,
+                                  image_path,
+                                  SPIF_UPDATEINIFILE | SPIF_SENDCHANGE)
+
+    return result
+
+# Bucle infinito para animar las imágenes
+while True:
+    # Solicitar al usuario que seleccione la ruta
+    ventana.update_idletasks()
+    ventana.update()
+
+    # Obtener la ruta de la carpeta seleccionada
+    ruta_carpeta = ubicacion_var.get()
+
+    # Lista de nombres de archivos
+    file_names = ['Selection1.png', 'Selection2.png', 'Selection3.png']
+
+    # Lista de rutas completas de las imágenes
+    image_paths = [os.path.join(ruta_carpeta, file_name) for file_name in file_names]
+
+    for image_path in image_paths:
+        set_wallpaper(image_path)
+        time.sleep(0.2)  # Cambia el valor según la duración que desees entre cada imagen
+
+ventana.mainloop()
