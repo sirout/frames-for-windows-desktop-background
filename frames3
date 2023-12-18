@@ -1,0 +1,97 @@
+import tkinter as tk
+from tkinter import filedialog
+import ctypes
+import os
+from PIL import Image, ImageTk
+
+def seleccionar_ruta():
+    ruta = filedialog.askdirectory()
+    if ruta:
+        ubicacion_var.set(ruta)
+        detener_animacion()  # Detener la animación actual
+        actualizar_fondo_de_pantalla()
+
+def detener_animacion():
+    if id_animacion[0] is not None:
+        ventana.after_cancel(id_animacion[0])
+
+def actualizar_fondo_de_pantalla():
+    ruta_carpeta = ubicacion_var.get()
+
+    # Lista de nombres de archivos
+    file_names = ['Selection1.png', 'Selection2.png', 'Selection3.png']
+
+    # Lista de rutas completas de las imágenes
+    image_paths = [os.path.join(ruta_carpeta, file_name) for file_name in file_names]
+
+    # Función para actualizar la previsualización y establecer el fondo de pantalla
+    def actualizar(indice=0):
+        try:
+            image_path = image_paths[indice]
+            if os.path.exists(image_path):  # Verificar si el archivo existe
+                imagen = Image.open(image_path)
+                imagen.thumbnail((150, 150))  # Ajusta el tamaño de la imagen para la previsualización
+                imagen_tk = ImageTk.PhotoImage(imagen)
+
+                label_preview.configure(image=imagen_tk)
+                label_preview.image = imagen_tk
+
+                ventana.update()
+                set_wallpaper(image_path)
+
+                # Programar la próxima actualización después de 200 milisegundos
+                id_animacion[0] = ventana.after(200, lambda: actualizar((indice + 1) % len(image_paths)))
+
+            else:
+                print(f"La imagen {image_path} no existe.")
+        except Exception as e:
+            print(f"Error al abrir la imagen {image_path}: {e}")
+
+    # Iniciar la animación llamando a la función actualizar
+    id_animacion[0] = ventana.after(0, actualizar)
+
+    # Actualizar la etiqueta con la ubicación seleccionada
+    #etiqueta_ubicacion.config(text=f"Ubicación: {ruta_carpeta}")
+
+def set_wallpaper(image_path):
+    SPI_SETDESKWALLPAPER = 0x0014
+    SPIF_UPDATEINIFILE = 0x01
+    SPIF_SENDCHANGE = 0x02
+
+    user32 = ctypes.WinDLL('user32')
+    SystemParametersInfo = user32.SystemParametersInfoW
+
+    # Obtener la ruta completa del archivo
+    image_path = os.path.abspath(image_path)
+
+    # Establecer el fondo de escritorio
+    SystemParametersInfo(SPI_SETDESKWALLPAPER,
+                         0,
+                         image_path,
+                         SPIF_UPDATEINIFILE | SPIF_SENDCHANGE)
+
+# Crear la ventana principal
+ventana = tk.Tk()
+ventana.title("Seleccionar Ruta")
+ventana.geometry("400x300")
+
+# Variable para almacenar la ubicación
+ubicacion_var = tk.StringVar()
+
+# Etiqueta y entrada para la ubicación
+#etiqueta_ubicacion = tk.Label(ventana, text="Ubicación x: ")
+##etiqueta_ubicacion.pack()
+entrada_ubicacion = tk.Entry(ventana, textvariable=ubicacion_var, state='readonly', width=50)
+entrada_ubicacion.pack()
+
+# Botón para seleccionar la ruta
+boton_seleccionar = tk.Button(ventana, text="Seleccionar ruta", command=seleccionar_ruta)
+boton_seleccionar.pack()
+
+# Etiqueta para la previsualización
+label_preview = tk.Label(ventana)
+label_preview.pack()
+
+id_animacion = [None]  # Lista mutable para almacenar el id de la animación actual
+
+ventana.mainloop()
