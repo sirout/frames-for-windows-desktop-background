@@ -1,0 +1,76 @@
+import ctypes
+import os
+import time
+import codecs
+
+def buscarCarpetas(directorio):
+    carpetas = [nombre for nombre in os.listdir(directorio) if os.path.isdir(os.path.join(directorio, nombre))]
+    numCarpeta = ''
+    respuesta = False
+    cont = 1
+
+    for carpeta in carpetas:
+        print(str(cont) + ". " + carpeta)
+        cont = cont + 1
+
+    while not respuesta:
+        numCarpeta = input('\nNúmero de la carpeta: ')
+        try:
+            numCarpeta = int(numCarpeta)
+            if 1 <= numCarpeta <= len(carpetas):
+                respuesta = True
+            else:
+                print("Número de carpeta fuera de rango. Inténtalo de nuevo.")
+        except ValueError:
+            print("Por favor, introduce un número válido.")
+
+    print("Has escogido \"%s\"" % carpetas[numCarpeta - 1])
+
+    return carpetas[numCarpeta - 1]
+
+# Ruta del directorio de carpetas
+directorio = '/Users/' # cambia a por tu ruta de carpetas de las imagenes
+
+# Obtener la carpeta seleccionada
+carpeta_seleccionada = buscarCarpetas(directorio)
+
+# Ruta completa de la carpeta seleccionada
+ruta_carpeta = os.path.join(directorio, carpeta_seleccionada)
+print("ruta > ", ruta_carpeta)
+# Ahora puedes usar la ruta_carpeta para realizar operaciones con las carpetas.
+
+####################################################
+
+
+
+# Lista de nombres de archivos
+file_names = ['Selection1.png', 'Selection2.png', 'Selection3.png']
+
+# Lista de rutas completas de las imágenes
+image_paths = [os.path.join(ruta_carpeta, file_name) for file_name in file_names]
+
+# Función para establecer el fondo de escritorio
+def set_wallpaper(image_path):
+    SPI_SETDESKWALLPAPER = 0x0014
+    SPIF_UPDATEINIFILE = 0x01
+    SPIF_SENDCHANGE = 0x02
+
+    user32 = ctypes.WinDLL('user32')
+    SystemParametersInfo = user32.SystemParametersInfoW
+
+    # Obtener la ruta completa del archivo
+    image_path = os.path.abspath(image_path)
+
+    # Establecer el fondo de escritorio
+    result = SystemParametersInfo(SPI_SETDESKWALLPAPER,
+                                  0,
+                                  image_path,
+                                  SPIF_UPDATEINIFILE | SPIF_SENDCHANGE)
+
+    return result
+
+# Bucle infinito para animar las imágenes
+while True:
+    for image_path in image_paths:
+        set_wallpaper(image_path)
+        time.sleep(0.2)  # Cambia el valor según la duración que desees entre cada imagen
